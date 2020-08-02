@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>磁力搜索器</string>
+   <string>磁力搜索器    v1.1</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

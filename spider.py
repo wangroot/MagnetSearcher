@@ -2,7 +2,7 @@
 # 爬虫
 from PySide2.QtCore import QObject, Signal
 from requests import session as RqSession
-from re import findall
+from re import findall, IGNORECASE
 from queue import Queue
 from threading import Thread
 from lxml.etree import HTML
@@ -49,6 +49,16 @@ class Spider(QObject):
                 item = queue.get(False)
         except:
             return
+
+    def isRelated(self, title:str) -> bool:
+        """结果是否与搜索内容相关"""
+        pattern = ""
+        for char in self._content:
+            pattern += "{}.*".format(char)
+        related = findall(pattern, title, IGNORECASE)
+        if related:
+            return True
+        return False
 
     def runMagnet(self):
         """开始"""
@@ -179,89 +189,94 @@ class Spider(QObject):
         web_name, url = detail_url
         detail_response = self._session.get(url=url)
         title = findall(r"<title>(.+?)</title>", detail_response.text.replace("\n", ""))[0].replace(" 磁力下载 - ØMagnet 无极磁链", "").strip()
-        try:
-            magnet = findall(r"type=\"text\" value=\"(.+?)\"", detail_response.text)[0].strip()
-        except:
-            magnet = None
-        try:
-            hash = findall(r"<dt>种子特征码 :</dt>\s*<dd>(.+?)</dd>", detail_response.text)[0].strip()
-        except:
-            hash = None
-        try:
-            size = findall(r"<dt>文件大小 :</dt> <dd>(.+?)</dd>", detail_response.text)[0].strip()
-        except:
-            size = ""
-        try:
-            create_time = findall(r"<dt>发布日期 :</dt>\s*<dd>(.+) .+</dd>", detail_response.text)[0].strip()
-        except:
-            create_time = ""
-        result = Magnet(domain=web_name, title=title, size=size, create_time=create_time, hash_str=hash, magnet_content=magnet)
-        self.result_add.emit(result)
+        if self.isRelated(title):
+            try:
+                magnet = findall(r"type=\"text\" value=\"(.+?)\"", detail_response.text)[0].strip()
+            except:
+                magnet = None
+            try:
+                hash = findall(r"<dt>种子特征码 :</dt>\s*<dd>(.+?)</dd>", detail_response.text)[0].strip()
+            except:
+                hash = None
+            try:
+                size = findall(r"<dt>文件大小 :</dt> <dd>(.+?)</dd>", detail_response.text)[0].strip()
+            except:
+                size = ""
+            try:
+                create_time = findall(r"<dt>发布日期 :</dt>\s*<dd>(.+) .+</dd>", detail_response.text)[0].strip()
+            except:
+                create_time = ""
+            result = Magnet(domain=web_name, title=title, size=size, create_time=create_time, hash_str=hash, magnet_content=magnet)
+            self.result_add.emit(result)
 
     def detailMagnetBitcq(self, detail_url:tuple) -> None:
         web_name, url, download = detail_url
         detail_response = self._session.get(url=url)
         title = findall(r"bitcq.com\s*\|(.+?)</title>", detail_response.text)[0].strip()
-        try:
-            magnet = findall(r"href=\"(.+?)\"\s*target=\"_blank\"\s*class=\"btn btn-default btn-lg\"", detail_response.text)[0].strip()
-        except:
-            magnet = None
-        try:
-            size = findall(r"Size:\s*(.+)", detail_response.text)[0].strip()
-        except:
-            size = ""
-        result = Magnet(domain=web_name, title=title, size=size, download=download, magnet_content=magnet)
-        self.result_add.emit(result)
+        if self.isRelated(title):
+            try:
+                magnet = findall(r"href=\"(.+?)\"\s*target=\"_blank\"\s*class=\"btn btn-default btn-lg\"", detail_response.text)[0].strip()
+            except:
+                magnet = None
+            try:
+                size = findall(r"Size:\s*(.+)", detail_response.text)[0].strip()
+            except:
+                size = ""
+            result = Magnet(domain=web_name, title=title, size=size, download=download, magnet_content=magnet)
+            self.result_add.emit(result)
 
     def detailMagnetZooqle(self, detail_url:tuple) -> None:
         web_name, url, download = detail_url
         detail_response = self._session.get(url=url)
         title = findall(r"id=\"torname\">(.+?)<", detail_response.text)[0].strip()
-        try:
-            magnet = findall(r"<a rel=\"nofollow\" href=\"(.+?)\"", detail_response.text)[0].strip()
-        except:
-            magnet = None
-        try:
-            size = findall(r"title=\"File size\"></i>(.+?)<", detail_response.text)[0].strip()
-        except:
-            size = ""
-        result = Magnet(domain=web_name, title=title, size=size, download=download, magnet_content=magnet)
-        self.result_add.emit(result)
+        if self.isRelated(title):
+            try:
+                magnet = findall(r"<a rel=\"nofollow\" href=\"(.+?)\"", detail_response.text)[0].strip()
+            except:
+                magnet = None
+            try:
+                size = findall(r"title=\"File size\"></i>(.+?)<", detail_response.text)[0].strip()
+            except:
+                size = ""
+            result = Magnet(domain=web_name, title=title, size=size, download=download, magnet_content=magnet)
+            self.result_add.emit(result)
 
     def detailMagnetCilifeng(self, detail_url:tuple) -> None:
         web_name, url = detail_url
         detail_response = self._session.get(url=url)
         title = findall(r"<title>(.+)-磁链详细-磁力风</title>", detail_response.text)[0].strip()
-        try:
-            magnet = findall(r"href=\"(.+)\">点击打开磁链", detail_response.text)[0].strip()
-        except:
-            magnet = None
-        try:
-            size = findall(r"class=\"d-inline-block text-gray mr-3\">(.+?)<", detail_response.text)[1].strip()
-        except:
-            size = ""
-        result = Magnet(domain=web_name, title=title, size=size, magnet_content=magnet)
-        self.result_add.emit(result)
+        if self.isRelated(title):
+            try:
+                magnet = findall(r"href=\"(.+)\">点击打开磁链", detail_response.text)[0].strip()
+            except:
+                magnet = None
+            try:
+                size = findall(r"class=\"d-inline-block text-gray mr-3\">(.+?)<", detail_response.text)[1].strip()
+            except:
+                size = ""
+            result = Magnet(domain=web_name, title=title, size=size, magnet_content=magnet)
+            self.result_add.emit(result)
 
     def detailMagnetCilixingqiu(self, detail_url:tuple) -> None:
         web_name, url = detail_url
         detail_response = self._session.get(url=url)
         title = findall(r"class=\"crumb-item current\">(.+?)</span>", detail_response.text)[0].strip()
-        try:
-            hash = findall(r"<p><a class=\"blue-color\" href=\"(.+?)\"", detail_response.text)[0].strip()
-        except:
-            hash = None
-        try:
-            size = findall(r"文件大小：<strong>(.+?)</strong>", detail_response.text)[0].strip()
-        except:
-            size = ""
-        try:
-            create_time = findall(r"收录时间：<strong>(.+?)</strong>", detail_response.text)[0].strip()
-        except:
-            create_time = ""
-        result = Magnet(domain=web_name, title=title, size=size, create_time=create_time, hash_str=hash)
-        self.result_add.emit(result)
+        if self.isRelated(title):
+            try:
+                hash = findall(r"<p><a class=\"blue-color\" href=\"(.+?)\"", detail_response.text)[0].strip()
+            except:
+                hash = None
+            try:
+                size = findall(r"文件大小：<strong>(.+?)</strong>", detail_response.text)[0].strip()
+            except:
+                size = ""
+            try:
+                create_time = findall(r"收录时间：<strong>(.+?)</strong>", detail_response.text)[0].strip()
+            except:
+                create_time = ""
+            result = Magnet(domain=web_name, title=title, size=size, create_time=create_time, hash_str=hash)
+            self.result_add.emit(result)
 
 
 if __name__ == '__main__':
-    Spider().searchUrlMagnetCilixingqiu("少女")
+    pass
